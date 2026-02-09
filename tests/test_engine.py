@@ -3,6 +3,7 @@ def test_engine_respects_gpu_and_angle(plugin, dummy_options):
     engine = plugin.PaddleOCREngine._get_paddle_ocr(opts)
     assert engine.kwargs["device"] == "gpu"
     assert engine.kwargs["use_textline_orientation"] is False
+    assert engine.kwargs["use_doc_preprocessor"] is False
 
 
 def test_engine_cache_key(plugin, dummy_options):

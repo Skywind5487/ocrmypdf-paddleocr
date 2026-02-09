@@ -43,6 +43,8 @@ def make_engine(options):
         'lang': paddle_lang,
         'use_doc_unwarping': False,
         'use_doc_orientation_classify': False,
+        # Align with PaddleOCR online behavior to avoid aggressive preprocessing artifacts.
+        'use_doc_preprocessor': False,
     }
 
     kwargs['device'] = 'gpu' if use_gpu else 'cpu'
