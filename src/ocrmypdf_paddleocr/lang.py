@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 from typing import Dict, Set
 
-_LANG_PATH = Path(__file__).with_name("languages.json")
-_LANG_LIST_PATH = Path(__file__).with_name("languages_supported.json")
+_LANG_PATH = Path(__file__).with_name("language_map.json")
+_LANG_LIST_PATH = Path(__file__).with_name("supported_languages.json")
 
 
 def _load_language_map(path: Path = _LANG_PATH) -> Dict[str, str]:
