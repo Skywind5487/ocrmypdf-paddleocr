@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from ocrmypdf import hookimpl
 
+from ocrmypdf.exceptions import MissingDependencyError
+
 try:
     from paddleocr import PaddleOCR  # noqa: F401
-except ImportError:
+except (ImportError, AttributeError):
     PaddleOCR = None
 
 
@@ -73,7 +75,6 @@ def add_options(parser):
 def check_options(options):
     """Validate PaddleOCR options."""
     if PaddleOCR is None:
-        from ocrmypdf.exceptions import MissingDependencyError
         raise MissingDependencyError(
             "PaddleOCR is not installed. "
             "Install it with: pip install paddlepaddle paddleocr"

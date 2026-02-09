@@ -15,3 +15,9 @@ def test_engine_cache_key(plugin, dummy_options):
     opts3 = dummy_options(languages=["chi_tra"])
     e3 = plugin.PaddleOCREngine._get_paddle_ocr(opts3)
     assert e3 is not e1  # different lang -> new cache entry
+
+
+def test_engine_invalid_det_input_shape_ignored(plugin, dummy_options):
+    opts = dummy_options(paddle_det_input_shape="abc")
+    engine = plugin.PaddleOCREngine._get_paddle_ocr(opts)
+    assert "text_det_input_shape" not in engine.kwargs

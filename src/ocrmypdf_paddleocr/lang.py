@@ -2,24 +2,45 @@
 
 from __future__ import annotations
 
-LANGUAGE_MAP = {
-    'eng': 'en',
-    'chi_sim': 'ch',
-    'chi_tra': 'chinese_cht',
-    'fra': 'fr',
-    'deu': 'german',
-    'jpn': 'japan',
-    'kor': 'korean',
-    'spa': 'spanish',
-    'rus': 'ru',
-    'ara': 'ar',
-    'hin': 'hi',
-    'por': 'pt',
-    'ita': 'it',
-    'tur': 'tr',
-    'vie': 'vi',
-    'tha': 'th',
-}
+import json
+from pathlib import Path
+from typing import Dict
+
+_LANG_PATH = Path(__file__).with_name("languages.json")
+
+
+def _load_language_map(path: Path = _LANG_PATH) -> Dict[str, str]:
+    """Load language map from JSON; fallback to baked defaults if missing/invalid."""
+    fallback = {
+        "eng": "en",
+        "chi_sim": "ch",
+        "chi_tra": "chinese_cht",
+        "fra": "fr",
+        "deu": "german",
+        "jpn": "japan",
+        "kor": "korean",
+        "spa": "spanish",
+        "rus": "ru",
+        "ara": "ar",
+        "hin": "hi",
+        "por": "pt",
+        "ita": "it",
+        "tur": "tr",
+        "vie": "vi",
+        "tha": "th",
+    }
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in data.items()):
+            return data
+    except OSError:
+        pass
+    except json.JSONDecodeError:
+        pass
+    return fallback
+
+
+LANGUAGE_MAP = _load_language_map()
 
 
 def to_paddle_lang(options) -> str:

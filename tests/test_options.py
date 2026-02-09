@@ -1,5 +1,10 @@
 import argparse
+import importlib
+import sys
 
+import pytest
+
+import ocrmypdf_paddleocr.options as options_mod
 
 def test_add_options_defaults(plugin):
     parser = argparse.ArgumentParser()
@@ -34,3 +39,12 @@ def test_add_options_overrides(plugin):
     assert opts.paddle_rec_model_dir == "rec"
     assert opts.paddle_det_limit_side_len == 1024
     assert opts.paddle_det_input_shape == "3,640,640"
+
+
+def test_check_options_missing_dependency(monkeypatch):
+    # ensure paddleocr import fails
+    monkeypatch.setitem(sys.modules, "paddleocr", None)
+    importlib.reload(options_mod)
+    with pytest.raises(options_mod.MissingDependencyError):
+        options_mod.check_options(argparse.Namespace())
+    importlib.reload(options_mod)
