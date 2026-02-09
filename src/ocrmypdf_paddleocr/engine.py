@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import inspect
 
 from .lang import to_paddle_lang
 
@@ -43,9 +44,13 @@ def make_engine(options):
         'lang': paddle_lang,
         'use_doc_unwarping': False,
         'use_doc_orientation_classify': False,
-        # Align with PaddleOCR online behavior to avoid aggressive preprocessing artifacts.
-        'use_doc_preprocessor': False,
     }
+    # Newer PaddleOCR versions support this flag; older versions error on unknown args.
+    try:
+        if "use_doc_preprocessor" in inspect.signature(PaddleOCR).parameters:
+            kwargs["use_doc_preprocessor"] = False
+    except (TypeError, ValueError):
+        pass
 
     kwargs['device'] = 'gpu' if use_gpu else 'cpu'
 
