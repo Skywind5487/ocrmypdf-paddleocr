@@ -10,19 +10,19 @@ from PIL import Image
 from ocrmypdf import hookimpl
 from ocrmypdf.pluginspec import OcrEngine, OrientationConfidence
 
-from . import engine, hocr, lang, options
+from . import engine, hocr, lang, options as options_mod
 
 log = logging.getLogger(__name__)
 
 
 @hookimpl
 def add_options(parser):
-    return options.add_options(parser)
+    return options_mod.add_options(parser)
 
 
 @hookimpl
-def check_options(opts):
-    return options.check_options(opts)
+def check_options(options):
+    return options_mod.check_options(options)
 
 
 class PaddleOCREngine(OcrEngine):
