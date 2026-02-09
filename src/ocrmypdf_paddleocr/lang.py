@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Set
 
 _LANG_PATH = Path(__file__).with_name("languages.json")
+_LANG_LIST_PATH = Path(__file__).with_name("languages_supported.json")
 
 
 def _load_language_map(path: Path = _LANG_PATH) -> Dict[str, str]:
@@ -56,3 +57,51 @@ def to_hocr_lang(paddle_lang: str) -> str:
     """Return hOCR lang code matching the original Tesseract-style code."""
     reverse = {v: k for k, v in LANGUAGE_MAP.items()}
     return reverse.get(paddle_lang, paddle_lang)
+
+
+def _load_supported_languages(path: Path = _LANG_LIST_PATH) -> Set[str]:
+    """Load supported language codes list; fallback to map keys/values union."""
+    base = set(LANGUAGE_MAP.keys()) | set(LANGUAGE_MAP.values())
+    extras = {
+        "ta",
+        "te",
+        "ka",
+        "latin",
+        "ar",
+        "cy",
+        "da",
+        "de",
+        "es",
+        "et",
+        "fr",
+        "ga",
+        "hi",
+        "it",
+        "ja",
+        "ko",
+        "la",
+        "nl",
+        "no",
+        "oc",
+        "pt",
+        "ro",
+        "ru",
+        "sr",
+        "sv",
+        "tr",
+        "uk",
+        "vi",
+    }
+    fallback = base | extras
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(data, list) and all(isinstance(x, str) for x in data):
+            return set(data) | base
+    except OSError:
+        pass
+    except json.JSONDecodeError:
+        pass
+    return fallback
+
+
+SUPPORTED_LANGUAGES = _load_supported_languages()

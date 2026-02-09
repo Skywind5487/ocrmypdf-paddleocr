@@ -51,49 +51,7 @@ class PaddleOCREngine(OcrEngine):
 
     @staticmethod
     def languages(options):
-        return {
-            "en",
-            "ch",
-            "chinese_cht",
-            "ta",
-            "te",
-            "ka",
-            "latin",
-            "ar",
-            "cy",
-            "da",
-            "de",
-            "es",
-            "et",
-            "fr",
-            "ga",
-            "hi",
-            "it",
-            "ja",
-            "ko",
-            "la",
-            "nl",
-            "no",
-            "oc",
-            "pt",
-            "ro",
-            "ru",
-            "sr",
-            "sv",
-            "tr",
-            "uk",
-            "vi",
-            # Tesseract codes for compatibility
-            "eng",
-            "chi_sim",
-            "chi_tra",
-            "deu",
-            "fra",
-            "spa",
-            "rus",
-            "jpn",
-            "kor",
-        }
+        return lang.SUPPORTED_LANGUAGES
 
     @staticmethod
     def _get_paddle_lang(options):
@@ -137,4 +95,3 @@ class PaddleOCREngine(OcrEngine):
 @hookimpl
 def get_ocr_engine():
     return PaddleOCREngine()
-
