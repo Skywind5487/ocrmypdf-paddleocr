@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtualenv / tooling
+.venv/
+.python-shims/
+
+# Test caches
+.pytest_cache/
+
+# OS / editor
+Thumbs.db
+.DS_Store
+
