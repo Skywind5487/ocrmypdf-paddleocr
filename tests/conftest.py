@@ -25,13 +25,28 @@ class FakePaddleOCR:
 def fake_paddle_module(monkeypatch):
     module = types.SimpleNamespace(PaddleOCR=FakePaddleOCR)
     monkeypatch.setitem(sys.modules, "paddleocr", module)
+
+    class FakePaddleDevice:
+        @staticmethod
+        def is_compiled_with_cuda():
+            return True
+
+        @staticmethod
+        def get_device():
+            return "gpu"
+
+    fake_paddle = types.SimpleNamespace(device=FakePaddleDevice())
+    monkeypatch.setitem(sys.modules, "paddle", fake_paddle)
     return FakePaddleOCR
 
 
 @pytest.fixture
 def plugin(fake_paddle_module, monkeypatch):
+    import importlib
+    import ocrmypdf_paddleocr.engine as engine_mod
     import ocrmypdf_paddleocr.plugin as plugin_mod
 
+    importlib.reload(engine_mod)
     importlib.reload(plugin_mod)
     plugin_mod.PaddleOCREngine._ocr_cache.clear()
     plugin_mod.PaddleOCREngine._page_counter = 0

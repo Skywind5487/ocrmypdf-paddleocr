@@ -21,3 +21,30 @@ def test_engine_invalid_det_input_shape_ignored(plugin, dummy_options):
     opts = dummy_options(paddle_det_input_shape="abc")
     engine = plugin.PaddleOCREngine._get_paddle_ocr(opts)
     assert "text_det_input_shape" not in engine.kwargs
+
+
+def test_gpu_request_downgrades_without_cuda(monkeypatch, dummy_options):
+    import importlib
+    import types
+    import sys
+    import conftest
+
+    class Dev:
+        @staticmethod
+        def is_compiled_with_cuda():
+            return False
+
+        @staticmethod
+        def get_device():
+            return "cpu"
+
+    fake_paddle = types.SimpleNamespace(device=Dev())
+    monkeypatch.setitem(sys.modules, "paddle", fake_paddle)
+    monkeypatch.setitem(sys.modules, "paddleocr", types.SimpleNamespace(PaddleOCR=conftest.FakePaddleOCR))
+
+    import ocrmypdf_paddleocr.engine as engine_mod
+
+    importlib.reload(engine_mod)
+    opts = dummy_options(paddle_use_gpu=True)
+    eng = engine_mod.make_engine(opts)
+    assert eng.kwargs["device"] == "cpu"

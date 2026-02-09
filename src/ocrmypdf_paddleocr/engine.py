@@ -28,6 +28,16 @@ def make_engine(options):
     paddle_lang = to_paddle_lang(options)
     log.debug(f"Initializing PaddleOCR with language: {paddle_lang}")
 
+    use_gpu = getattr(options, 'paddle_use_gpu', False)
+    try:
+        import paddle  # type: ignore
+
+        if use_gpu and hasattr(paddle, "device") and not paddle.device.is_compiled_with_cuda():
+            log.warning("Requested GPU but Paddle is not compiled with CUDA; falling back to CPU.")
+            use_gpu = False
+    except ImportError:
+        pass
+
     kwargs = {
         'use_textline_orientation': getattr(options, 'paddle_use_angle_cls', True),
         'lang': paddle_lang,
@@ -35,7 +45,7 @@ def make_engine(options):
         'use_doc_orientation_classify': False,
     }
 
-    kwargs['device'] = 'gpu' if getattr(options, 'paddle_use_gpu', False) else 'cpu'
+    kwargs['device'] = 'gpu' if use_gpu else 'cpu'
 
     if getattr(options, 'paddle_det_model_dir', None):
         kwargs['text_detection_model_dir'] = options.paddle_det_model_dir
