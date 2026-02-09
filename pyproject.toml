@@ -35,6 +35,12 @@ dependencies = [
     "pillow>=9.0.0",
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest>=7.4",
+    "pillow>=9.0.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/yourusername/ocrmypdf-paddleocr"
 Repository = "https://github.com/yourusername/ocrmypdf-paddleocr"
@@ -51,3 +57,9 @@ where = ["src"]
 
 [tool.setuptools_scm]
 write_to = "src/ocrmypdf_paddleocr/_version.py"
+
+[dependency-groups]
+dev = [
+    "pillow>=10.4.0",
+    "pytest>=8.3.5",
+]

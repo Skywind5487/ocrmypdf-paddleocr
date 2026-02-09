@@ -43,6 +43,24 @@ def add_options(parser):
         help='Show PaddleOCR internal logging',
     )
     paddle.add_argument(
+        '--paddle-det-limit-side-len',
+        type=int,
+        default=None,
+        help='Limit text detection input side length to reduce memory usage (e.g. 1536)',
+    )
+    paddle.add_argument(
+        '--paddle-det-input-shape',
+        metavar='C,H,W',
+        help='Override text detection input shape, e.g. 3,960,960',
+    )
+    paddle.add_argument(
+        '--paddle-no-word-box',
+        action='store_false',
+        dest='paddle_return_word_box',
+        default=True,
+        help='Disable PaddleOCR word box output to reduce memory usage',
+    )
+    paddle.add_argument(
         '--paddle-det-model-dir',
         metavar='DIR',
         help='Path to text detection model directory',
@@ -72,6 +90,9 @@ def check_options(options):
 
 class PaddleOCREngine(OcrEngine):
     """Implements OCR with PaddleOCR."""
+
+    _ocr_cache = {}
+    _page_counter = 0
 
     # Mapping from Tesseract/OCRmyPDF language codes to PaddleOCR codes
     LANGUAGE_MAP = {
@@ -149,8 +170,8 @@ class PaddleOCREngine(OcrEngine):
         log.debug(f"Initializing PaddleOCR with language: {paddle_lang}")
 
         kwargs = {
-            # Disable textline orientation - not needed for most documents
-            'use_textline_orientation': False,
+            # Respect --paddle-no-angle-cls (default True)
+            'use_textline_orientation': getattr(options, 'paddle_use_angle_cls', True),
             'lang': paddle_lang,
             # Disable document unwarping - coordinates must match original image
             'use_doc_unwarping': False,
@@ -171,9 +192,35 @@ class PaddleOCREngine(OcrEngine):
             kwargs['text_recognition_model_dir'] = options.paddle_rec_model_dir
         if hasattr(options, 'paddle_cls_model_dir') and options.paddle_cls_model_dir:
             kwargs['textline_orientation_model_dir'] = options.paddle_cls_model_dir
+        if hasattr(options, 'paddle_det_limit_side_len') and options.paddle_det_limit_side_len:
+            kwargs['text_det_limit_side_len'] = options.paddle_det_limit_side_len
+        if hasattr(options, 'paddle_det_input_shape') and options.paddle_det_input_shape:
+            try:
+                kwargs['text_det_input_shape'] = [
+                    int(v.strip()) for v in str(options.paddle_det_input_shape).split(',')
+                ]
+            except ValueError:
+                log.warning(
+                    f"Ignoring invalid --paddle-det-input-shape={options.paddle_det_input_shape!r}"
+                )
+
+        cache_key = (
+            kwargs.get('device'),
+            kwargs.get('lang'),
+            kwargs.get('text_detection_model_dir'),
+            kwargs.get('text_recognition_model_dir'),
+            kwargs.get('textline_orientation_model_dir'),
+            kwargs.get('text_det_limit_side_len'),
+            tuple(kwargs.get('text_det_input_shape', [])),
+        )
+        cached = PaddleOCREngine._ocr_cache.get(cache_key)
+        if cached is not None:
+            return cached
 
         log.debug(f"Creating PaddleOCR with kwargs: {kwargs}")
-        return PaddleOCR(**kwargs)
+        created = PaddleOCR(**kwargs)
+        PaddleOCREngine._ocr_cache[cache_key] = created
+        return created
 
     @staticmethod
     def get_orientation(input_file: Path, options) -> OrientationConfidence:
@@ -204,7 +251,10 @@ class PaddleOCREngine(OcrEngine):
 
         # Run OCR - use predict() instead of deprecated ocr()
         # Enable return_word_box=True for native word-level bounding boxes
-        result = paddle_ocr.predict(str(input_file), return_word_box=True)
+        result = paddle_ocr.predict(
+            str(input_file),
+            return_word_box=getattr(options, 'paddle_return_word_box', True)
+        )
 
         # Calculate scaling factors from preprocessed image
         scale_x = 1.0
