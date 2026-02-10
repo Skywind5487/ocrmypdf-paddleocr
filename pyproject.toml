@@ -30,8 +30,8 @@ classifiers = [
 ]
 dependencies = [
     "ocrmypdf>=14.0.0",
-    "paddlepaddle>=2.5.0",
     "paddleocr>=2.7.0",
+    "paddlepaddle-gpu==3.0.0",
     "pillow>=9.0.0",
 ]
 
@@ -57,6 +57,13 @@ where = ["src"]
 
 [tool.setuptools_scm]
 write_to = "src/ocrmypdf_paddleocr/_version.py"
+
+[[tool.uv.index]]
+url = "https://pypi.org/simple"
+
+[[tool.uv.index]]
+url = "https://www.paddlepaddle.org.cn/packages/stable/cu118/"
+default = true
 
 [dependency-groups]
 dev = [

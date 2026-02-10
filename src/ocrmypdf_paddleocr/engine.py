@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 import os
 import inspect
+import site
+from pathlib import Path
 
 from .lang import to_paddle_lang
 
@@ -18,6 +20,43 @@ log = logging.getLogger(__name__)
 _ocr_cache = {}
 
 
+def _prepend_windows_nvidia_runtime_paths() -> None:
+    """Ensure bundled NVIDIA runtime DLL directories are visible on Windows."""
+    if os.name != "nt":
+        return
+
+    candidate_roots = []
+    try:
+        candidate_roots.extend(site.getsitepackages())
+    except Exception:
+        pass
+
+    user_site = site.getusersitepackages()
+    if user_site:
+        candidate_roots.append(user_site)
+
+    bins = []
+    for root in candidate_roots:
+        nvidia_dir = Path(root) / "nvidia"
+        if not nvidia_dir.exists():
+            continue
+        for child in nvidia_dir.iterdir():
+            if not child.is_dir():
+                continue
+            bin_dir = child / "bin"
+            if bin_dir.exists():
+                bins.append(str(bin_dir))
+
+    if not bins:
+        return
+
+    current = os.environ.get("PATH", "")
+    current_entries = current.split(";") if current else []
+    new_entries = [p for p in bins if p not in current_entries]
+    if new_entries:
+        os.environ["PATH"] = ";".join(new_entries + current_entries)
+
+
 def make_engine(options):
     """Create (or reuse) a configured PaddleOCR instance."""
     # OCRmyPDF Tesseract plugin may set OMP_THREAD_LIMIT; Paddle needs more threads.
@@ -25,6 +64,8 @@ def make_engine(options):
     if saved_omp_limit:
         log.warning(f"Removing OMP_THREAD_LIMIT={saved_omp_limit} set by Tesseract plugin")
         os.environ.pop('OMP_THREAD_LIMIT', None)
+
+    _prepend_windows_nvidia_runtime_paths()
 
     paddle_lang = to_paddle_lang(options)
     log.debug(f"Initializing PaddleOCR with language: {paddle_lang}")
